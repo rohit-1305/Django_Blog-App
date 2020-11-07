@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from . models import Post
-from django.views.generic import ListView, DetailView, CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
 
 def home(request):
     context = {
@@ -21,7 +22,7 @@ class PostDetailView(DetailView):
     model = Post
 
 
-class PostCreateView(CreateView):
+class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     fields = ['title', 'content']
 
@@ -29,6 +30,20 @@ class PostCreateView(CreateView):
         form.instance.aurthor = self.request.user
         return super().form_valid(form)  # just running the form valid method to parent form
 
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin,UpdateView):
+    model = Post
+    fields = ['title', 'content']
+
+    def form_valid(self, form):
+        form.instance.aurthor = self.request.user
+        return super().form_valid(form)
+    
+    def test_func(self):
+        post = self.get_object()
+        if self.request.user == post.aurthor:
+            return True
+        return False
 
 def about(request):
     return render(request, 'blog/about.html', {'title': 'About Page'})
